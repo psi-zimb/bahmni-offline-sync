@@ -2,6 +2,7 @@ package org.bahmni.module.bahmniOfflineSync.job;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bahmni.module.bahmniOfflineSync.eventLog.EventLogIteratorException;
 import org.bahmni.module.bahmniOfflineSync.eventLog.EventLogProcessor;
 import org.bahmni.module.bahmniOfflineSync.utils.PatientProfileWriter;
 import org.bahmni.module.bahmniOfflineSync.web.v1.controller.InitialSyncArtifactController;
@@ -13,11 +14,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
@@ -79,43 +83,130 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
     public void execute() {
         String sql;
         String initSyncDirectory = Context.getAdministrationService().getGlobalProperty(InitialSyncArtifactController.GP_BAHMNICONNECT_INIT_SYNC_PATH, InitialSyncArtifactController.DEFAULT_INIT_SYNC_PATH);
-        try {
-            log.info("InitialSyncArtifactsPublisher job started");
-            createInitSyncDirectory(initSyncDirectory);
+//        try {
+//            log.info("InitialSyncArtifactsPublisher job started");
+//            createInitSyncDirectory(initSyncDirectory);
+//            SimpleObject lastEvent = getLastEvent();
+//            Integer lastEventId = new Integer(lastEvent.get("id"));
+//            List<String> filters = getAllFilters();
+//            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"patients\":[";
+//            String postText = "]}";
+//            for (String filter : filters) {
+//                log.info(String.format("Creating zip files for %s is started", filter));
+//                Connection connection = getTransactionManager().getConnection();
+//                sql = getSql(lastEventId, filter);
+//
+//                EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, new PatientProfileTransformer());
+//                List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
+//
+//                for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
+//                    String fileName = getFileName(filter, index);
+//                    log.info(String.format("Creating zip file for %s is started", fileName));
+//                    List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
+//                    PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "patient");
+//                    String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
+//                            subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
+//                    String preText = String.format(preTextTemplate, lastEventUuid);
+//                    patientProfileWriter.write(preText);
+//                    eventLogProcessor.process(subUrls, patientProfileWriter);
+//                    patientProfileWriter.write(postText);
+//                    patientProfileWriter.close();
+//                    Thread.sleep(1000);
+//                    log.info(String.format("Creating zip file for %s is successfully completed", fileName));
+//                }
+//
+//                log.info(String.format("Creating zip files for %s is successfully completed", filter));
+//            }
+//            log.info("InitialSyncArtifactsPublisher job completed");
+//        } catch (SQLException | IOException | InterruptedException e) {
+//            e.printStackTrace();
+//        }
+
+        zipAddressHierarchyEntries(initSyncDirectory);
+        zipOfflineConcepts(initSyncDirectory);
+    }
+
+    private void zipOfflineConcepts(String initSyncDirectory) {
+        createInitSyncDirectory(initSyncDirectory);
+        try{
             SimpleObject lastEvent = getLastEvent();
             Integer lastEventId = new Integer(lastEvent.get("id"));
-            List<String> filters = getAllFilters();
-            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"patients\":[";
+            log.error("LastEventId: + " + lastEventId);
+            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"offline-concepts\":[";
             String postText = "]}";
-            for (String filter : filters) {
-                log.info(String.format("Creating zip files for %s is started", filter));
-                Connection connection = getTransactionManager().getConnection();
-                sql = getSql(lastEventId, filter);
+            Connection connection = getTransactionManager().getConnection();
+            String filter = "offline-concepts";
+            String sql = getObjectUUIDSql(lastEventId, filter);
+            EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, null);
+            List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
+            for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
+                String fileName = getFileName(filter, index);
+                log.error(String.format("Creating zip file for %s is started", fileName));
+                List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
+                log.error("SubUrls : " + subUrls.toString());
+                PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "offline-concepts");
+                String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
+                        subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
+                String preText = String.format(preTextTemplate, lastEventUuid);
+                patientProfileWriter.write(preText);
 
-                EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, new PatientProfileTransformer());
-                List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
-
-                for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
-                    String fileName = getFileName(filter, index);
-                    log.info(String.format("Creating zip file for %s is started", fileName));
-                    List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
-                    PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "patient");
-                    String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
-                            subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
-                    String preText = String.format(preTextTemplate, lastEventUuid);
-                    patientProfileWriter.write(preText);
-                    eventLogProcessor.process(subUrls, patientProfileWriter);
-                    patientProfileWriter.write(postText);
-                    patientProfileWriter.close();
-                    Thread.sleep(1000);
-                    log.info(String.format("Creating zip file for %s is successfully completed", fileName));
+                try {
+                    for (int i = 0; i < subUrls.size(); i++) {
+                        SimpleObject event = subUrls.get(i);
+                        SimpleObject simpleObject = new SimpleObject();
+                        simpleObject.add("offline-concepts", getOpenMRSResource(event.get("object")));
+                        if (i != 0) {
+                            patientProfileWriter.append(",");
+                        }
+                        patientProfileWriter.write(simpleObject);
+                        break; //TODO : Remove this
+                    }
+                } catch (IOException e) {
+                    throw new EventLogIteratorException("Error while writing with provided writer [" + patientProfileWriter.toString() + "]", e);
                 }
-
-                log.info(String.format("Creating zip files for %s is successfully completed", filter));
+                patientProfileWriter.write(postText);
+                patientProfileWriter.close();
+                Thread.sleep(1000);
+                break; //TODO : Remove this
             }
-            log.info("InitialSyncArtifactsPublisher job completed");
         } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static String getOpenMRSResource(String targetURL) {
+        HttpURLConnection connection = null;
+
+        try {
+            //Create connection
+            URL url = new URL(targetURL);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Content-Type", "application/json");
+            String userCredentials = "superman:Admin123";
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+            connection.setRequestProperty ("Authorization", basicAuth);
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
+            //Get Response
+            System.out.println("Status : " + connection.getResponseCode());
+            InputStream is = connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                response.append(line);
+                response.append('\r');
+            }
+            rd.close();
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
@@ -138,6 +229,45 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
     private String getSql(Integer lastEventId, String filter) {
         String template = "SELECT object, uuid FROM event_log WHERE filter = '%s' and id <= %d and category = 'patient' GROUP BY object";
         return String.format(template, filter, lastEventId);
+    }
+
+    private String getObjectUUIDSql(Integer lastEventId, String category) {
+        String template = "SELECT object, uuid FROM event_log WHERE id <= %d and category = '%s' GROUP BY object";
+        return String.format(template, lastEventId, category);
+    }
+
+    private void zipAddressHierarchyEntries(String initSyncDirectory){
+        createInitSyncDirectory(initSyncDirectory);
+        try{
+            SimpleObject lastEvent = getLastEvent();
+            Integer lastEventId = new Integer(lastEvent.get("id"));
+            log.error("LastEventId: + " + lastEventId);
+            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"addressHierarchy\":[";
+            String postText = "]}";
+            Connection connection = getTransactionManager().getConnection();
+            String filter = "AddressHierarchy";
+            String sql = getObjectUUIDSql(lastEventId, filter);
+            EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, new AddressHierarchyTransformer());
+            List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
+            for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
+                String fileName = getFileName(filter, index);
+                log.error(String.format("Creating zip file for %s is started", fileName));
+                List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
+                log.error("SubUrls : " + subUrls.toString());
+                PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "addressHierarchy");
+                String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
+                        subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
+                String preText = String.format(preTextTemplate, lastEventUuid);
+                patientProfileWriter.write(preText);
+                eventLogProcessor.process(subUrls, patientProfileWriter);
+                patientProfileWriter.write(postText);
+                patientProfileWriter.close();
+                Thread.sleep(1000);
+                break; //TODO
+            }
+        } catch (SQLException | IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private AtomFeedSpringTransactionManager getTransactionManager() {

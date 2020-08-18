@@ -132,7 +132,7 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
             SimpleObject lastEvent = getLastEvent();
             Integer lastEventId = new Integer(lastEvent.get("id"));
             log.error("LastEventId: + " + lastEventId);
-            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"offline-concepts\":[";
+            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"offlineconcepts\":[";
             String postText = "]}";
             Connection connection = getTransactionManager().getConnection();
             String filter = "offline-concepts";
@@ -141,25 +141,20 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
             List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
             for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
                 String fileName = getFileName(filter, index);
-                log.error(String.format("Creating zip file for %s is started", fileName));
                 List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
-                log.error("SubUrls : " + subUrls.toString());
                 PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "offline-concepts");
                 String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
                         subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
                 String preText = String.format(preTextTemplate, lastEventUuid);
                 patientProfileWriter.write(preText);
-
                 try {
                     for (int i = 0; i < subUrls.size(); i++) {
                         SimpleObject event = subUrls.get(i);
-                        SimpleObject simpleObject = new SimpleObject();
-                        simpleObject.add("offline-concepts", getOpenMRSResource(event.get("object")));
+                        String temp = getOpenMRSResource("http://localhost"+event.get("object")+"/");
                         if (i != 0) {
                             patientProfileWriter.append(",");
                         }
-                        patientProfileWriter.write(simpleObject);
-                        break; //TODO : Remove this
+                        patientProfileWriter.write(SimpleObject.parseJson(temp));
                     }
                 } catch (IOException e) {
                     throw new EventLogIteratorException("Error while writing with provided writer [" + patientProfileWriter.toString() + "]", e);
@@ -167,14 +162,13 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
                 patientProfileWriter.write(postText);
                 patientProfileWriter.close();
                 Thread.sleep(1000);
-                break; //TODO : Remove this
             }
         } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private static String getOpenMRSResource(String targetURL) {
+    private  String getOpenMRSResource(String targetURL) {
         HttpURLConnection connection = null;
 
         try {
@@ -188,8 +182,6 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
             connection.setRequestProperty ("Authorization", basicAuth);
             connection.setUseCaches(false);
             connection.setDoOutput(true);
-            //Get Response
-            System.out.println("Status : " + connection.getResponseCode());
             InputStream is = connection.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is));
             StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+

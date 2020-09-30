@@ -117,13 +117,18 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
 
                 log.info(String.format("Creating zip files for %s is successfully completed", filter));
             }
+            log.info("Creating of ZIP Files for offlineConcepts is started");
+            zipOfflineConcepts(initSyncDirectory);
+            log.info("Creating of ZIP Files for offlineConcepts is successfully completed ");
+            log.info("Creating of ZIP Files for addressHierarchy is started");
+            //zipAddressHierarchyEntries(initSyncDirectory);
+            log.info("Creating of ZIP Files for addressHierarchy is successfully completed");
+
             log.info("InitialSyncArtifactsPublisher job completed");
         } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
-        zipAddressHierarchyEntries(initSyncDirectory);
-        zipOfflineConcepts(initSyncDirectory);
     }
 
     private void zipOfflineConcepts(String initSyncDirectory) {

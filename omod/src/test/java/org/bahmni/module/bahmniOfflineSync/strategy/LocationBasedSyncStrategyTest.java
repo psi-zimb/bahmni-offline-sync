@@ -129,7 +129,7 @@ public class LocationBasedSyncStrategyTest {
     @Test
     public void shouldEvaluateFilterForAddressHierarchyForTop3Levels() throws Exception {
 
-        System.out.println("Get Concept : \n" + executeGet("http://localhost/openmrs/ws/rest/v1/concept/7781cdba-0950-44f8-a886-e17f2ad0cc23?s=byFullySpecifiedName&v=bahmni&name=Pre+HIV+test+counselling"));
+       executeGet("http://localhost/openmrs/ws/rest/v1/concept/7781cdba-0950-44f8-a886-e17f2ad0cc23?s=byFullySpecifiedName&v=bahmni&name=Pre+HIV+test+counselling");
         AddressHierarchyLevel ahl = new AddressHierarchyLevel();
         ahl.setLevelId(1);
         addressHierarchyEntry.setLevel(ahl);

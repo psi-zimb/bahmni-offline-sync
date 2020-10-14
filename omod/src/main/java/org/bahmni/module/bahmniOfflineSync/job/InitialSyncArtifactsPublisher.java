@@ -31,7 +31,24 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
 
     private volatile AtomFeedSpringTransactionManager atomFeedSpringTransactionManager;
     protected static int JUMP_SIZE = 1000;
+    private String userName;
+    private String password;
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     private AtomFeedSpringTransactionManager createTransactionManager() {
         PlatformTransactionManager platformTransactionManager = getSpringPlatformTransactionManager();
@@ -184,7 +201,7 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Content-Type", "application/json");
-            String userCredentials = "superman:Admin123";
+            String userCredentials = userName+":"+password;
             String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
             connection.setRequestProperty ("Authorization", basicAuth);
             connection.setUseCaches(false);

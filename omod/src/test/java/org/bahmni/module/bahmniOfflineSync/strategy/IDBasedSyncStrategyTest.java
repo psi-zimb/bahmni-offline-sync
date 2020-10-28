@@ -67,6 +67,8 @@ public class IDBasedSyncStrategyTest {
     private String patientUuid = "ff17adba-9750-462e-be29-e35091af93dd";
     private String addressUuid = "ff17adba-4870-462e-be29-e35091af93de";
     List<IdentifierSource> identifierSources;
+    private Person person;
+    private PersonAddress personAddress;
 
     @Before
     public void setUp() throws Exception {
@@ -85,7 +87,16 @@ public class IDBasedSyncStrategyTest {
         Mockito.when(sessionFactory.getCurrentSession()).thenReturn(session);
         Mockito.when(session.getTransaction()).thenReturn(transaction);
         idBasedSyncStrategy = new IDBasedSyncStrategy();
-        patient = new Patient();
+        person = new Person();
+        person.setId(123);
+        personAddress = new PersonAddress();
+        personAddress.setStateProvince("Test");
+        personAddress.setAddress1("District");
+        personAddress.setAddress2("Facility");
+        Set<PersonAddress> personAddressSet = new TreeSet<PersonAddress>();
+        personAddressSet.add(personAddress);
+        person.setAddresses(personAddressSet);
+        patient = new Patient(person);
         patient.setUuid(patientUuid);
         encounter = new Encounter();
         encounter.setPatient(patient);
@@ -131,7 +142,7 @@ public class IDBasedSyncStrategyTest {
 
     @Test
     public void shouldEvaluateFilterForEncounter() {
-        when(encounterService.getEncounterByUuid(encounterUuid)).thenReturn(encounter);
+        when(encounterService.getEncounterByUuid(anyString())).thenReturn(encounter);
         when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
         when(identifierSourceService.getAllIdentifierSources(false)).thenReturn(identifierSources);
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
@@ -149,10 +160,10 @@ public class IDBasedSyncStrategyTest {
         PersonAttribute personAttribute = new PersonAttribute();
         personAttribute.setValue("Value");
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + encounterUuid, new Date(), "Encounter");
+        EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + null, new Date(), "Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(1)).getEncounterByUuid(encounterUuid);
+        verify(encounterService, times(0)).getEncounterByUuid(null);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(null, eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
@@ -196,7 +207,7 @@ public class IDBasedSyncStrategyTest {
         EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "Patient");
         eventRecords.add(er);
         List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(patientService, times(1)).getPatientByUuid(patientUuid);
+        verify(patientService, times(2)).getPatientByUuid(patientUuid);
         verify(identifierSourceService, times(0)).getAllIdentifierSources(false);
         assertEquals(1, eventLogs.size());
         assertNull(eventLogs.get(0).getFilter());
@@ -271,5 +282,71 @@ public class IDBasedSyncStrategyTest {
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Please check [IdentifierSourceName] config for [Test Login Location]");
         idBasedSyncStrategy.getFilterForDevice("providerUuid", "addressUuid", "locationUuid");
+    }
+
+    @Test
+    public void shouldGetProvinceDistrictFacilityFromSyncStrategyForPatient() {
+        when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
+
+        when(identifierSourceService.getAllIdentifierSources(false)).thenReturn(identifierSources);
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "patient");
+        eventRecords.add(er);
+        List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        verify(patientService, times(2)).getPatientByUuid(anyString());
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals("GAN", eventLogs.get(0).getFilter());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals("Test",eventLogs.get(0).getProvince());
+        assertEquals("District", eventLogs.get(0).getDistrict());
+        assertEquals("Facility", eventLogs.get(0).getFacility());
+    }
+
+    @Test
+    public void shouldGetProvinceDistrictFacilityFromSyncStrategyForEncounter() {
+        when(encounterService.getEncounterByUuid(anyString())).thenReturn(encounter);
+        when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
+        when(identifierSourceService.getAllIdentifierSources(false)).thenReturn(identifierSources);
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + encounterUuid, new Date(), "Encounter");
+        eventRecords.add(er);
+        List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        verify(encounterService, times(2)).getEncounterByUuid(anyString());
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals("GAN", eventLogs.get(0).getFilter());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals("Test",eventLogs.get(0).getProvince());
+        assertEquals("District", eventLogs.get(0).getDistrict());
+        assertEquals("Facility", eventLogs.get(0).getFacility());
+    }
+
+    @Test
+    public void shouldNotSetProvinceDistrictFacilityFromSyncStrategyForAddressHierarchy() throws Exception {
+        PowerMockito.mockStatic(Context.class);
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "address", "", "url/" + addressUuid, new Date(), "addressHierarchy");
+        eventRecords.add(er);
+        List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals(null, eventLogs.get(0).getFilter());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals(null,eventLogs.get(0).getProvince());
+        assertEquals(null, eventLogs.get(0).getDistrict());
+        assertEquals(null, eventLogs.get(0).getFacility());
+    }
+
+    @Test
+    public void shouldNotSetProvinceDistrictFacilityFromSyncStrategyForOfflineConcepts() throws Exception {
+        PowerMockito.mockStatic(Context.class);
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "offlineConcepts", "", "url/" + addressUuid, new Date(), "offline-concepts");
+        eventRecords.add(er);
+        List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals(null, eventLogs.get(0).getFilter());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals(null,eventLogs.get(0).getProvince());
+        assertEquals(null, eventLogs.get(0).getDistrict());
+        assertEquals(null, eventLogs.get(0).getFacility());
     }
 }

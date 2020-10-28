@@ -3,6 +3,7 @@ package org.bahmni.module.bahmniOfflineSync.strategy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.bahmni.module.bahmniOfflineSync.eventLog.EventLog;
+import org.bahmni.module.bahmniOfflineSync.utils.SelectiveSyncStrategyHelper;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.jdbc.ReturningWork;
@@ -17,6 +18,7 @@ import org.openmrs.module.idgen.IdentifierSource;
 import org.openmrs.module.idgen.SequentialIdentifierGenerator;
 import org.openmrs.module.idgen.service.IdentifierSourceService;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -45,6 +47,9 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
             " idgen_log_entry entry on idgen_seq_id_gen.id = entry.source and entry.identifier = ? " +
             " join idgen_identifier_source src on src.id = entry.source and src.retired is not null";
 
+    @Autowired
+    private SelectiveSyncStrategyHelper selectiveSyncStrategyHelper;
+
     public IDBasedSyncStrategy() {
         this.patientService = Context.getPatientService();
         this.encounterService = Context.getEncounterService();
@@ -58,7 +63,6 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
 
     protected String evaluateFilterForPatient(String uuid) {
         final Patient patient = patientService.getPatientByUuid(uuid);
-
         if (patient != null) {
             PatientIdentifier identifier = getPatientIdentifier(patient);
             if (identifier == null)
@@ -82,6 +86,21 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
         }
 
         return null;
+    }
+
+    private void setAdditionalFilters(EventLog eventLog, String uuid) {
+        if(eventLog.getCategory().equalsIgnoreCase("patient")){
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
+        }
+        else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
+            Encounter encounter = encounterService.getEncounterByUuid(eventLog.getUuid());
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
+        }
+    }
+
+    private Patient getPatient(String uuid)
+    {
+        return patientService.getPatientByUuid(uuid);
     }
 
     private String evaluateFilterForAddressHierarchy(String uuid) {
@@ -190,9 +209,9 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
                     eventLog.setObject(String.format(encounterURL, uuid));
                 } else if (category.equalsIgnoreCase("addressHierarchy"))
                     filter = evaluateFilterForAddressHierarchy(uuid);
+                setAdditionalFilters(eventLog, uuid);
             }
             eventLog.setFilter(filter);
-
             eventLogs.add(eventLog);
         }
 

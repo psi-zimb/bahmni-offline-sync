@@ -5,7 +5,7 @@ import org.openmrs.Patient;
 
 public class SelectiveSyncStrategyHelper {
 
-    public EventLog setAddressHierarchy(Patient patient, EventLog eventLog)
+    public static EventLog setAddressHierarchy(Patient patient, EventLog eventLog)
     {
         if(patient.getPerson() != null && patient.getPerson().getPersonAddress() != null) {
             eventLog.setProvince(patient.getPerson().getPersonAddress().getStateProvince());

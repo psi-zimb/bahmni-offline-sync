@@ -200,15 +200,17 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
             URL url = new URL(targetURL);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("Content-Type", "application/json");
+            //connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("content-type", "application/x-www-form-urlencoded; charset=utf-8");
+            connection.setRequestProperty("accept-charset", "UTF-8");
             String userCredentials = userName+":"+password;
             String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
             connection.setRequestProperty ("Authorization", basicAuth);
             connection.setUseCaches(false);
             connection.setDoOutput(true);
             InputStream is = connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is,"UTF-8"));
+            StringBuilder response = new StringBuilder();
             String line;
             while ((line = rd.readLine()) != null) {
                 response.append(line);

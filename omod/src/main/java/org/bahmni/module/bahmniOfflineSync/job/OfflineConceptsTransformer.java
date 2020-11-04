@@ -1,5 +1,8 @@
 package org.bahmni.module.bahmniOfflineSync.job;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bahmni.module.bahmniOfflineSync.eventLog.RowTransformer;
@@ -25,10 +28,17 @@ public class OfflineConceptsTransformer implements RowTransformer {
         try {
             Concept concept = conceptService.getConcept(uuid);
             if(null != concept) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+                String json2 = objectMapper.writeValueAsString(concept);
+                log.error("converted response2 ->" + json2);
+                ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+                ow.canSerialize(Concept.class);
+                String json = ow.writeValueAsString(concept);
                 StringBuilder sbr = new StringBuilder();
                 SimpleObject simpleObject = new SimpleObject();
                 simpleObject.add("offlineConcept", SimpleObject.parseJson(sbr.toString()));
-                log.error("converted response ->" + simpleObject.get("offlineConcept"));
+                log.error("converted response ->" + json);
                 return simpleObject.get("offlineConcept");
             }
             else return null;

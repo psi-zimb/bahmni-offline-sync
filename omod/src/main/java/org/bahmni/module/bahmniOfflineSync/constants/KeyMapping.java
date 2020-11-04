@@ -16,4 +16,6 @@ public class KeyMapping {
     public static final String Parent_ID= " \"parentId\":";
     public static final String UserGenerated_ID= " \"userGeneratedId\":";
     public static final String UUID= " \"uuid\":\"";
+    public static final String UserName = "userName";
+    public static final String Password = "password";
 }

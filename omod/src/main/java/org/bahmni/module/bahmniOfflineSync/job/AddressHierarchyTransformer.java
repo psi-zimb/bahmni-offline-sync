@@ -2,6 +2,7 @@ package org.bahmni.module.bahmniOfflineSync.job;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bahmni.module.bahmniOfflineSync.constants.KeyMapping;
 import org.bahmni.module.bahmniOfflineSync.eventLog.RowTransformer;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.addresshierarchy.AddressHierarchyEntry;
@@ -20,7 +21,6 @@ public class AddressHierarchyTransformer implements RowTransformer {
     @Override
     public SimpleObject transform(String url) {
         AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
-        EmrConceptService conceptService = Context.getService(EmrConceptService.class);
         log.error("url is "+ url);
         String uuid = getUuidFromUrl(url);
         if (uuid == null) {
@@ -31,20 +31,20 @@ public class AddressHierarchyTransformer implements RowTransformer {
             if(addressHierarchyEntry != null) {
                 StringBuilder sbr = new StringBuilder();
                 sbr.append("{");
-                sbr.append("\"addressHierarchyEntryId\":" + addressHierarchyEntry.getAddressHierarchyEntryId() + ",");
-                sbr.append("\"name\":\"" + addressHierarchyEntry.getName() + "\",");
-                sbr.append(" \"levelId\":" + addressHierarchyEntry.getLevel().getId() + ",");
-                sbr.append("\"addressHierarchyLevel\": {");
-                sbr.append("\"levelId\":" + addressHierarchyEntry.getLevel().getId() + ",");
-                sbr.append("\"name\":\"" + addressHierarchyEntry.getLevel().getName() + "\",");
-                sbr.append("\"parentLevelId\":" + getParentLevelID(addressHierarchyEntry.getLevel().getParent()) + ",");
-                sbr.append("\"addressField\":\"" + addressHierarchyEntry.getLevel().getAddressField().getName() + "\",");
-                sbr.append("\"required\":" + addressHierarchyEntry.getLevel().getRequired() + ",");
-                sbr.append("\"uuid\":\"" + addressHierarchyEntry.getLevel().getUuid() + "\",");
-                sbr.append("\"id\":" + addressHierarchyEntry.getLevel().getId() + "},");
-                sbr.append(" \"parentId\":" + getParentID(addressHierarchyEntry.getParent()) + ",");
-                sbr.append(" \"userGeneratedId\":" + addressHierarchyEntry.getUserGeneratedId() + ",");
-                sbr.append(" \"uuid\":\"" + addressHierarchyEntry.getUuid()+"\"");
+                sbr.append(KeyMapping.AddressHierarchyEntry_ID + addressHierarchyEntry.getAddressHierarchyEntryId() + ",");
+                sbr.append(KeyMapping.Name + addressHierarchyEntry.getName() + "\",");
+                sbr.append(KeyMapping.Level_ID + addressHierarchyEntry.getLevel().getId() + ",");
+                sbr.append(KeyMapping.AddressHierarchyLevel);
+                sbr.append(KeyMapping.AddressHierarchyLevelID + addressHierarchyEntry.getLevel().getId() + ",");
+                sbr.append(KeyMapping.AddressHierarchyLevelName + addressHierarchyEntry.getLevel().getName() + "\",");
+                sbr.append(KeyMapping.AddressHierarchyLevelParent_ID + getParentLevelID(addressHierarchyEntry.getLevel().getParent()) + ",");
+                sbr.append(KeyMapping.AddressHierarchyLevel_AddressFiled + addressHierarchyEntry.getLevel().getAddressField().getName() + "\",");
+                sbr.append(KeyMapping.AddressHierarchyLevel_Required + addressHierarchyEntry.getLevel().getRequired() + ",");
+                sbr.append(KeyMapping.AddressHierarchyLevel_UUID + addressHierarchyEntry.getLevel().getUuid() + "\",");
+                sbr.append(KeyMapping.AddressHierarchyLevel_ID + addressHierarchyEntry.getLevel().getId() + "},");
+                sbr.append(KeyMapping.Parent_ID + getParentID(addressHierarchyEntry.getParent()) + ",");
+                sbr.append(KeyMapping.UserGenerated_ID + addressHierarchyEntry.getUserGeneratedId() + ",");
+                sbr.append(KeyMapping.UUID + addressHierarchyEntry.getUuid()+"\"");
                 sbr.append("}");
                 SimpleObject simpleObject = new SimpleObject();
                 simpleObject.add("address",  SimpleObject.parseJson(sbr.toString()));

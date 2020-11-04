@@ -135,7 +135,7 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
                 log.info(String.format("Creating zip files for %s is successfully completed", filter));
             }
             log.info("Creating of ZIP Files for offlineConcepts is started");
-            zipOfflineConcepts(initSyncDirectory);
+            //zipOfflineConcepts(initSyncDirectory);
             log.info("Creating of ZIP Files for offlineConcepts is successfully completed ");
             log.info("Creating of ZIP Files for addressHierarchy is started");
             zipAddressHierarchyEntries(initSyncDirectory);
@@ -148,50 +148,82 @@ public class InitialSyncArtifactsPublisher extends AbstractTask {
 
     }
 
-    private void zipOfflineConcepts(String initSyncDirectory) {
+//    private void zipOfflineConcepts(String initSyncDirectory) {
+//        createInitSyncDirectory(initSyncDirectory);
+//        try{
+//            SimpleObject lastEvent = getLastEvent();
+//            Integer lastEventId = new Integer(lastEvent.get("id"));
+//            log.info("LastEventId: + " + lastEventId);
+//            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"offlineconcepts\":[";
+//            String postText = "]}";
+//            Connection connection = getTransactionManager().getConnection();
+//            String filter = "offline-concepts";
+//            String sql = getObjectUUIDSql(lastEventId, filter);
+//            EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, null);
+//            List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
+//            log.info("Number of offline concepts records -> "+ urls.size());
+//            for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
+//                String fileName = getFileName(filter, index);
+//                List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
+//                PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "offline-concepts");
+//                String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
+//                        subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
+//                String preText = String.format(preTextTemplate, lastEventUuid);
+//                patientProfileWriter.write(preText);
+//                try {
+//                    for (int fileCount = 0; fileCount < subUrls.size(); fileCount++) {
+//                        SimpleObject event = subUrls.get(fileCount);
+//                        String temp = getOpenMRSResource("http://localhost"+event.get("object")+"/");
+//                        if (fileCount != 0) {
+//                            patientProfileWriter.append(",");
+//                        }
+//                        patientProfileWriter.write(SimpleObject.parseJson(temp));
+//                    }
+//                    log.info(String.format("Creating zip file for %s is successfully completed", fileName));
+//                } catch (IOException e) {
+//                    throw new EventLogIteratorException("Error while writing with provided writer [" + patientProfileWriter.toString() + "]", e);
+//                }
+//                patientProfileWriter.write(postText);
+//                patientProfileWriter.close();
+//                Thread.sleep(1000);
+//            }
+//        } catch (SQLException | IOException | InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    private void zipOfflineConcepts(String initSyncDirectory){
         createInitSyncDirectory(initSyncDirectory);
         try{
             SimpleObject lastEvent = getLastEvent();
             Integer lastEventId = new Integer(lastEvent.get("id"));
-            log.info("LastEventId: + " + lastEventId);
-            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"offlineconcepts\":[";
+            log.error("LastEventId: + " + lastEventId);
+            String preTextTemplate = "{\"lastReadEventUuid\":\"%s\", \"addressHierarchy\":[";
             String postText = "]}";
             Connection connection = getTransactionManager().getConnection();
             String filter = "offline-concepts";
             String sql = getObjectUUIDSql(lastEventId, filter);
-            EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, null);
+            EventLogProcessor eventLogProcessor = new EventLogProcessor(sql, connection, new OfflineConceptsTransformer());
             List<SimpleObject> urls = eventLogProcessor.getUrlObjects();
-            log.info("Number of offline concepts records -> "+ urls.size());
             for (int index = 0; index < urls.size(); index += JUMP_SIZE) {
                 String fileName = getFileName(filter, index);
+                log.error(String.format("Creating zip file for %s is started", fileName));
                 List<SimpleObject> subUrls = urls.subList(index, getUpperLimit(index, urls.size()));
-                PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "offline-concepts");
+                PatientProfileWriter patientProfileWriter = getWriter(fileName, initSyncDirectory, "addressHierarchy");
                 String lastEventUuid = (index + JUMP_SIZE < urls.size()) ?
                         subUrls.get(subUrls.size() - 1).get("uuid").toString() : lastEvent.get("uuid").toString();
                 String preText = String.format(preTextTemplate, lastEventUuid);
                 patientProfileWriter.write(preText);
-                try {
-                    for (int fileCount = 0; fileCount < subUrls.size(); fileCount++) {
-                        SimpleObject event = subUrls.get(fileCount);
-                        String temp = getOpenMRSResource("http://localhost"+event.get("object")+"/");
-                        if (fileCount != 0) {
-                            patientProfileWriter.append(",");
-                        }
-                        patientProfileWriter.write(SimpleObject.parseJson(temp));
-                    }
-                    log.info(String.format("Creating zip file for %s is successfully completed", fileName));
-                } catch (IOException e) {
-                    throw new EventLogIteratorException("Error while writing with provided writer [" + patientProfileWriter.toString() + "]", e);
-                }
+                eventLogProcessor.process(subUrls, patientProfileWriter);
                 patientProfileWriter.write(postText);
                 patientProfileWriter.close();
                 Thread.sleep(1000);
+                // break; //TODO
             }
         } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
-
     private  String getOpenMRSResource(String targetURL) {
         HttpURLConnection connection = null;
 

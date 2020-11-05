@@ -1,13 +1,11 @@
 package org.bahmni.module.bahmniOfflineSync.strategy;
 
 import org.bahmni.module.bahmniOfflineSync.eventLog.EventLog;
-import org.bahmni.module.bahmniOfflineSync.utils.SelectiveSyncStrategyHelper;
 import org.ict4h.atomfeed.server.domain.EventRecord;
 import org.openmrs.*;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.addresshierarchy.AddressHierarchyEntry;
 import org.openmrs.module.addresshierarchy.service.AddressHierarchyService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
 import java.sql.SQLException;
@@ -15,8 +13,7 @@ import java.util.*;
 
 public class LocationBasedSyncStrategy extends AbstractOfflineSyncStrategy {
     private static final String ATTRIBUTE_TYPE_NAME = "addressCode";
-    @Autowired
-    private SelectiveSyncStrategyHelper selectiveSyncStrategyHelper;
+
 
     public LocationBasedSyncStrategy() throws SQLException {
         super();
@@ -187,29 +184,16 @@ public class LocationBasedSyncStrategy extends AbstractOfflineSyncStrategy {
                     filter = evaluateFilterForEncounter(uuid);
                 else if (category.equalsIgnoreCase("addressHierarchy"))
                     filter = evaluateFilterForAddressHierarchy(uuid);
-                setAdditionalFilters(eventLog,uuid);
             }
             eventLog.setFilter(filter);
+
             eventLogs.add(eventLog);
         }
 
         return eventLogs;
     }
 
-    private void setAdditionalFilters(EventLog eventLog, String uuid) {
-        if(eventLog.getCategory().equalsIgnoreCase("patient")){
-            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
-        }
-        else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
-            Encounter encounter = encounterService.getEncounterByUuid(eventLog.getUuid());
-            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
-        }
-    }
 
-    private Patient getPatient(String uuid)
-    {
-        return patientService.getPatientByUuid(uuid);
-    }
 
     private boolean isOfflineConceptEvent(String eventUuid) {
         final Concept concept = conceptService.getConceptByUuid(eventUuid);

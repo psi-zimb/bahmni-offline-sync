@@ -17,12 +17,6 @@ public class EventLog {
 
     private String parentUuid;
 
-    private String province;
-
-    private String district;
-
-    private String facility;
-
     public EventLog(String uuid, String category, Date timestamp, String object,  String filter, String parentUuid) {
         this.uuid = uuid;
         this.category = category;
@@ -84,29 +78,5 @@ public class EventLog {
 
     public String getParentUuid() {
         return parentUuid;
-    }
-
-    public String getProvince() {
-        return province;
-    }
-
-    public void setProvince(String province) {
-        this.province = province;
-    }
-
-    public String getDistrict() {
-        return district;
-    }
-
-    public void setDistrict(String district) {
-        this.district = district;
-    }
-
-    public String getFacility() {
-        return facility;
-    }
-
-    public void setFacility(String facility) {
-        this.facility = facility;
     }
 }

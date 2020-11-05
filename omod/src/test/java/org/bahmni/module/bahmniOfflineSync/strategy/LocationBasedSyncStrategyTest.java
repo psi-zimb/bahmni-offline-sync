@@ -55,8 +55,6 @@ public class LocationBasedSyncStrategyTest {
     private String encounterUuid = "ff17adba-9750-462e-be29-e35091af93df";
     private String patientUuid = "ff17adba-9750-462e-be29-e35091af93dd";
     private String addressUuid = "ff17adba-4870-462e-be29-e35091af93de";
-    private Person person;
-    private PersonAddress personAddress;
 
     @Before
     public void setUp() throws Exception {
@@ -69,16 +67,7 @@ public class LocationBasedSyncStrategyTest {
         registeredComponents.add(platformTransactionManager);
         Mockito.when(Context.getRegisteredComponents(PlatformTransactionManager.class)).thenReturn(registeredComponents);
         locationBasedSyncStrategy = new LocationBasedSyncStrategy();
-        person = new Person();
-        person.setId(123);
-        personAddress = new PersonAddress();
-        personAddress.setStateProvince("Test");
-        personAddress.setAddress1("District");
-        personAddress.setAddress2("Facility");
-        Set<PersonAddress> personAddressSet = new TreeSet<PersonAddress>();
-        personAddressSet.add(personAddress);
-        person.setAddresses(personAddressSet);
-        patient = new Patient(person);
+        patient = new Patient();
         patient.setUuid(patientUuid);
         encounter = new Encounter();
         encounter.setPatient(patient);
@@ -174,7 +163,7 @@ public class LocationBasedSyncStrategyTest {
 
     @Test
     public void shouldEvaluateFilterForEncounter() {
-        when(encounterService.getEncounterByUuid(anyString())).thenReturn(encounter);
+        when(encounterService.getEncounterByUuid(encounterUuid)).thenReturn(encounter);
         when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
         EventRecord er  = new EventRecord("uuid","Encounter","","url/" + encounterUuid,new Date(),"Encounter");
@@ -191,10 +180,10 @@ public class LocationBasedSyncStrategyTest {
         PersonAttribute personAttribute = new PersonAttribute();
         personAttribute.setValue("Value");
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er  = new EventRecord("uuid","Encounter","","url/" + null,new Date(),"Encounter");
+        EventRecord er  = new EventRecord("uuid","Encounter","","url/" + encounterUuid,new Date(),"Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(0)).getEncounterByUuid(null);
+        verify(encounterService, times(1)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(null, eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
@@ -204,22 +193,20 @@ public class LocationBasedSyncStrategyTest {
 
     @Test
     public void shouldReturnNullAsStringIfEncountersPatientAttributeIsNotAvailable() throws Exception {
-        Patient patientTemp = this.patient;
-        Set personAttributes = new HashSet();
-        patientTemp.setAttributes(personAttributes);
-        when(patientService.getPatientByUuid(anyString())).thenReturn(patientTemp);
-        when(encounterService.getEncounterByUuid(anyString())).thenReturn(encounter);
-        encounter.setPatient(patientTemp);
+        Patient patient = new Patient();
+        when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
+        when(encounterService.getEncounterByUuid(encounterUuid)).thenReturn(encounter);
+        encounter.setPatient(patient);
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
         EventRecord er  = new EventRecord("uuid","Encounter","","url/" + encounterUuid, new Date(),"Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(2)).getEncounterByUuid(anyString());
+        verify(encounterService, times(1)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(null, eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
 
-        verify(patientService, times(2)).getPatientByUuid(anyString());
+        verify(patientService, times(1)).getPatientByUuid(anyString());
     }
 
     @Test
@@ -229,7 +216,7 @@ public class LocationBasedSyncStrategyTest {
         eventRecords.add(er);
         when(patientService.getPatientByUuid(patientUuid)).thenReturn(patient);
         List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(patientService, times(2)).getPatientByUuid(patientUuid);
+        verify(patientService, times(1)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
         assertEquals("202020", eventLogs.get(0).getFilter());
@@ -242,7 +229,7 @@ public class LocationBasedSyncStrategyTest {
         EventRecord er  = new EventRecord("uuid","patient","","url/" + patientUuid,new Date(),"Patient");
         eventRecords.add(er);
         List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(patientService, times(2)).getPatientByUuid(patientUuid);
+        verify(patientService, times(1)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
         assertEquals(null, eventLogs.get(0).getFilter());
@@ -441,55 +428,5 @@ public class LocationBasedSyncStrategyTest {
     @Test(expected = RuntimeException.class)
     public void shouldThrowRuntimeExceptionWhenAddressFieldIsNUll() throws Exception {
         locationBasedSyncStrategy.getFilterForDevice("providerUuid", "null", "locationUuid");
-    }
-
-    @Test
-    public void shouldGetProvinceDistrictFacilityFromSyncStrategyForPatient() {
-        when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
-
-        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "patient");
-        eventRecords.add(er);
-        List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(patientService, times(2)).getPatientByUuid(anyString());
-        assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020", eventLogs.get(0).getFilter());
-        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getProvince());
-        assertEquals("District", eventLogs.get(0).getDistrict());
-        assertEquals("Facility", eventLogs.get(0).getFacility());
-    }
-
-    @Test
-    public void shouldGetProvinceDistrictFacilityFromSyncStrategyForEncounter() {
-        when(encounterService.getEncounterByUuid(anyString())).thenReturn(encounter);
-        when(patientService.getPatientByUuid(anyString())).thenReturn(patient);
-
-        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + encounterUuid, new Date(), "Encounter");
-        eventRecords.add(er);
-        List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(2)).getEncounterByUuid(anyString());
-        assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020", eventLogs.get(0).getFilter());
-        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getProvince());
-        assertEquals("District", eventLogs.get(0).getDistrict());
-        assertEquals("Facility", eventLogs.get(0).getFacility());
-    }
-
-    @Test
-    public void shouldNotSetProvinceDistrictFacilityFromSyncStrategyForOfflineConcepts() throws Exception {
-        PowerMockito.mockStatic(Context.class);
-        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er = new EventRecord("uuid", "offlineConcepts", "", "url/" + addressUuid, new Date(), "offline-concepts");
-        eventRecords.add(er);
-        List<EventLog> eventLogs = locationBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals(null, eventLogs.get(0).getFilter());
-        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals(null,eventLogs.get(0).getProvince());
-        assertEquals(null, eventLogs.get(0).getDistrict());
-        assertEquals(null, eventLogs.get(0).getFacility());
     }
 }

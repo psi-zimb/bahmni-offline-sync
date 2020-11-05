@@ -15,6 +15,8 @@ import java.util.*;
 
 public class LocationBasedSyncStrategy extends AbstractOfflineSyncStrategy {
     private static final String ATTRIBUTE_TYPE_NAME = "addressCode";
+    @Autowired
+    private SelectiveSyncStrategyHelper selectiveSyncStrategyHelper;
 
     public LocationBasedSyncStrategy() throws SQLException {
         super();
@@ -196,11 +198,11 @@ public class LocationBasedSyncStrategy extends AbstractOfflineSyncStrategy {
 
     private void setAdditionalFilters(EventLog eventLog, String uuid) {
         if(eventLog.getCategory().equalsIgnoreCase("patient")){
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
         }
         else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
             Encounter encounter = encounterService.getEncounterByUuid(eventLog.getUuid());
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
         }
     }
 

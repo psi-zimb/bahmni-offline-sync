@@ -47,6 +47,9 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
             " idgen_log_entry entry on idgen_seq_id_gen.id = entry.source and entry.identifier = ? " +
             " join idgen_identifier_source src on src.id = entry.source and src.retired is not null";
 
+    @Autowired
+    private SelectiveSyncStrategyHelper selectiveSyncStrategyHelper;
+
     public IDBasedSyncStrategy() {
         this.patientService = Context.getPatientService();
         this.encounterService = Context.getEncounterService();
@@ -87,11 +90,11 @@ public class IDBasedSyncStrategy extends AbstractOfflineSyncStrategy {
 
     private void setAdditionalFilters(EventLog eventLog, String uuid) {
         if(eventLog.getCategory().equalsIgnoreCase("patient")){
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
         }
         else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
             Encounter encounter = encounterService.getEncounterByUuid(eventLog.getUuid());
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
+            selectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
         }
     }
 

@@ -457,9 +457,9 @@ public class SelectiveSyncStrategyTest {
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals("202020", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getProvince());
-        assertEquals("District", eventLogs.get(0).getDistrict());
-        assertEquals("Facility", eventLogs.get(0).getFacility());
+        assertEquals("Test",eventLogs.get(0).getFilter1());
+        assertEquals("District", eventLogs.get(0).getFilter2());
+        assertEquals("Facility", eventLogs.get(0).getFilter3());
     }
 
     @Test
@@ -475,9 +475,9 @@ public class SelectiveSyncStrategyTest {
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals("202020", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getProvince());
-        assertEquals("District", eventLogs.get(0).getDistrict());
-        assertEquals("Facility", eventLogs.get(0).getFacility());
+        assertEquals("Test",eventLogs.get(0).getFilter1());
+        assertEquals("District", eventLogs.get(0).getFilter2());
+        assertEquals("Facility", eventLogs.get(0).getFilter3());
     }
 
     @Test
@@ -490,9 +490,9 @@ public class SelectiveSyncStrategyTest {
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(null, eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals(null,eventLogs.get(0).getProvince());
-        assertEquals(null, eventLogs.get(0).getDistrict());
-        assertEquals(null, eventLogs.get(0).getFacility());
+        assertEquals(null,eventLogs.get(0).getFilter1());
+        assertEquals(null, eventLogs.get(0).getFilter2());
+        assertEquals(null, eventLogs.get(0).getFilter3());
     }
 
 }

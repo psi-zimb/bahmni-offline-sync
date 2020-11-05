@@ -9,7 +9,7 @@ public class SelectiveSyncStrategyHelper {
     {
         if(patient.getPerson() != null && patient.getPerson().getPersonAddress() != null) {
             eventLog.setProvince(patient.getPerson().getPersonAddress().getStateProvince());
-            eventLog.setDistrict(patient.getPerson().getPersonAddress().getCityVillage());
+            eventLog.setDistrict(patient.getPerson().getPersonAddress().getAddress1());
             eventLog.setFacility(patient.getPerson().getPersonAddress().getAddress2());
         }
         return eventLog;

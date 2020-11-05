@@ -91,7 +91,7 @@ public class IDBasedSyncStrategyTest {
         person.setId(123);
         personAddress = new PersonAddress();
         personAddress.setStateProvince("Test");
-        personAddress.setCityVillage("District");
+        personAddress.setAddress1("District");
         personAddress.setAddress2("Facility");
         Set<PersonAddress> personAddressSet = new TreeSet<PersonAddress>();
         personAddressSet.add(personAddress);
@@ -149,7 +149,7 @@ public class IDBasedSyncStrategyTest {
         EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + encounterUuid, new Date(), "Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = idBasedSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(2)).getEncounterByUuid(encounterUuid);
+        verify(encounterService, times(1)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals("GAN", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());

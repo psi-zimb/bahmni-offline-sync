@@ -199,7 +199,7 @@ public class LocationBasedSyncStrategy extends AbstractOfflineSyncStrategy {
             SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog);
         }
         else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
-            Encounter encounter = encounterService.getEncounterByUuid(uuid);
+            Encounter encounter = encounterService.getEncounterByUuid(eventLog.getUuid());
             SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog);
         }
     }

@@ -162,7 +162,7 @@ public class SelectiveSyncStrategyTest {
         PowerMockito.mockStatic(Context.class);
         Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er  = new EventRecord("uuid","address","","url/",new Date(),"addressHierarchy");
+        EventRecord er  = new EventRecord(null,"address","","url/",new Date(),"addressHierarchy");
         eventRecords.add(er);
 
         when(addressHierarchyService.getAddressHierarchyEntryByUuid(null)).thenReturn(null);
@@ -184,7 +184,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020", eventLogs.get(0).getFilter());
+        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
     }
 
@@ -193,7 +193,7 @@ public class SelectiveSyncStrategyTest {
         PersonAttribute personAttribute = new PersonAttribute();
         personAttribute.setValue("Value");
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
-        EventRecord er  = new EventRecord("uuid","Encounter","","url/" + null,new Date(),"Encounter");
+        EventRecord er  = new EventRecord(null,"Encounter","","url/" + null,new Date(),"Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(0)).getEncounterByUuid(null);
@@ -216,12 +216,12 @@ public class SelectiveSyncStrategyTest {
         EventRecord er  = new EventRecord("uuid","Encounter","","url/" + encounterUuid, new Date(),"Encounter");
         eventRecords.add(er);
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(encounterService, times(2)).getEncounterByUuid(anyString());
+        verify(encounterService, times(1)).getEncounterByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(null, eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
 
-        verify(patientService, times(2)).getPatientByUuid(anyString());
+        verify(patientService, times(1)).getPatientByUuid(anyString());
     }
 
     @Test
@@ -234,7 +234,7 @@ public class SelectiveSyncStrategyTest {
         verify(patientService, times(2)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
-        assertEquals("202020", eventLogs.get(0).getFilter());
+        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
     }
 
     @Test
@@ -244,7 +244,7 @@ public class SelectiveSyncStrategyTest {
         EventRecord er  = new EventRecord("uuid","patient","","url/" + patientUuid,new Date(),"Patient");
         eventRecords.add(er);
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
-        verify(patientService, times(2)).getPatientByUuid(patientUuid);
+        verify(patientService, times(1)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
         assertEquals(null, eventLogs.get(0).getFilter());
@@ -455,7 +455,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(patientService, times(2)).getPatientByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020", eventLogs.get(0).getFilter());
+        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
         assertEquals("Test",eventLogs.get(0).getFilter1());
         assertEquals("District", eventLogs.get(0).getFilter2());
@@ -473,7 +473,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020", eventLogs.get(0).getFilter());
+        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
         assertEquals("Test",eventLogs.get(0).getFilter1());
         assertEquals("District", eventLogs.get(0).getFilter2());

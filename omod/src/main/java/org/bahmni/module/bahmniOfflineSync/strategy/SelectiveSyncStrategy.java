@@ -184,9 +184,11 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
                     filter = evaluateFilterForEncounter(uuid);
                 else if (category.equalsIgnoreCase("addressHierarchy"))
                     filter = evaluateFilterForAddressHierarchy(uuid);
+
+                eventLog.setFilter(filter);
+                if(null != filter)
                 setAdditionalFilters(eventLog,uuid);
             }
-            eventLog.setFilter(filter);
             eventLogs.add(eventLog);
         }
 

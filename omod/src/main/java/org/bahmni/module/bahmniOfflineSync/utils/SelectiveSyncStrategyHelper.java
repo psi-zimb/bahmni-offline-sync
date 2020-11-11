@@ -40,6 +40,6 @@ public class SelectiveSyncStrategyHelper {
 
     private static String getFilterValuePostNullCheck(String filter)
     {
-        return null == filter ? "" : "+" + filter ;
+        return null == filter ? "" : "-" + filter ;
     }
 }

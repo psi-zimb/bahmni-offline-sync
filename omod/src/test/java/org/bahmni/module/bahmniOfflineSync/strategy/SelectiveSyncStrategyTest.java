@@ -184,7 +184,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
     }
 
@@ -234,7 +234,7 @@ public class SelectiveSyncStrategyTest {
         verify(patientService, times(2)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
-        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
     }
 
     @Test
@@ -455,7 +455,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(patientService, times(2)).getPatientByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
         assertEquals("Test",eventLogs.get(0).getFilter1());
         assertEquals("District", eventLogs.get(0).getFilter2());
@@ -473,7 +473,7 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020+Test+District+Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
         assertEquals("Test",eventLogs.get(0).getFilter1());
         assertEquals("District", eventLogs.get(0).getFilter2());

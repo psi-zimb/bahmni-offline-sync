@@ -89,6 +89,7 @@ public class InitialSyncArtifactControllerTest {
 
     @Test
     public void shouldGiveAllTheFileNamesStartedWithGivenFilterSortByLastModifiedTime() throws Exception {
+        FileUtils.cleanDirectory(new File("./patient"));
         when(administrationService.getGlobalProperty(InitialSyncArtifactController.GP_BAHMNICONNECT_INIT_SYNC_PATH, InitialSyncArtifactController.DEFAULT_INIT_SYNC_PATH)).thenReturn(".");
         (new File("./patient/ABC-1.json.gz")).createNewFile();
         (new File("./patient/CDE-1.json.gz")).createNewFile();
@@ -104,6 +105,7 @@ public class InitialSyncArtifactControllerTest {
 
     @Test
     public void shouldGiveEmptyListWhenFilesAreNotAvailableForFilter() throws Exception {
+        FileUtils.cleanDirectory(new File("./patient"));
         when(administrationService.getGlobalProperty(InitialSyncArtifactController.GP_BAHMNICONNECT_INIT_SYNC_PATH, InitialSyncArtifactController.DEFAULT_INIT_SYNC_PATH)).thenReturn(".");
         InitialSyncArtifactController controller = new InitialSyncArtifactController();
         ArrayList<String> fileNames = controller.getFileNames("ABC");

@@ -23,6 +23,11 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -85,9 +90,46 @@ public class LocationBasedSyncStrategyTest {
         addressHierarchyEntry.setUserGeneratedId("202020");
     }
 
+    private static String executeGet(String targetURL) {
+        HttpURLConnection connection = null;
+
+        try {
+            //Create connection
+            URL url = new URL(targetURL);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Content-Type", "application/json");
+            String userCredentials = "superman:Admin123";
+            String basicAuth = "Basic " + new String(Base64.getEncoder().encode(userCredentials.getBytes()));
+            connection.setRequestProperty ("Authorization", basicAuth);
+            connection.setUseCaches(false);
+            connection.setDoOutput(true);
+            //Get Response
+            System.out.println("Status : " + connection.getResponseCode());
+            InputStream is = connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            String line;
+            while ((line = rd.readLine()) != null) {
+                response.append(line);
+                response.append('\r');
+            }
+            rd.close();
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
     @Test
     public void shouldEvaluateFilterForAddressHierarchyForTop3Levels() throws Exception {
 
+       executeGet("http://localhost/openmrs/ws/rest/v1/concept/7781cdba-0950-44f8-a886-e17f2ad0cc23?s=byFullySpecifiedName&v=bahmni&name=Pre+HIV+test+counselling");
         AddressHierarchyLevel ahl = new AddressHierarchyLevel();
         ahl.setLevelId(1);
         addressHierarchyEntry.setLevel(ahl);

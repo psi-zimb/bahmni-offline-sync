@@ -1,6 +1,8 @@
 package org.bahmni.module.bahmniOfflineSync.web.v1.controller;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.APIException;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.webservices.rest.web.RestConstants;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -34,6 +37,7 @@ public class InitialSyncArtifactController extends BaseRestController implements
     @RequestMapping(method = RequestMethod.GET, value = "/patientfiles", params = {"filter"})
     @ResponseBody
     public ArrayList<String> getFileNames(@RequestParam(value = "filter") String filter) {
+        Log logger = LogFactory.getLog(getClass());
         String initSyncDirectory = Context.getAdministrationService().getGlobalProperty(GP_BAHMNICONNECT_INIT_SYNC_PATH, DEFAULT_INIT_SYNC_PATH);
         File baseDirectory = new File(String.format("%s/patient", initSyncDirectory));
 
@@ -41,7 +45,9 @@ public class InitialSyncArtifactController extends BaseRestController implements
             return new ArrayList<>();
         }
 
-        File[] files = baseDirectory.listFiles((dir, name) -> name.matches(String.format("%s-.*\\.json\\.gz", filter)));
+        filter = filter.replace("[", "\\[").replace("]","\\]");
+        String finalFilter = filter;
+        File[] files = baseDirectory.listFiles((dir, name) -> name.matches(String.format("%s.*\\.json\\.gz", finalFilter)));
         Arrays.sort(files, Comparator.comparingLong(File::lastModified));
         return Arrays.stream(files).map(File::getName).collect(Collectors.toCollection(ArrayList::new));
     }

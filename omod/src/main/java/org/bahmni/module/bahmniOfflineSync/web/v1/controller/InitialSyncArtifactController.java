@@ -21,9 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -47,7 +45,7 @@ public class InitialSyncArtifactController extends BaseRestController implements
 
         filter = filter.replace("[", "\\[").replace("]","\\]");
         String finalFilter = filter;
-        File[] files = baseDirectory.listFiles((dir, name) -> name.matches(String.format("%s.*\\.json\\.gz", finalFilter)));
+        File[] files = baseDirectory.listFiles((dir, name) -> name.matches(String.format("(.*)%s(.*)\\.json\\.gz", finalFilter)));
         Arrays.sort(files, Comparator.comparingLong(File::lastModified));
         return Arrays.stream(files).map(File::getName).collect(Collectors.toCollection(ArrayList::new));
     }

@@ -230,6 +230,9 @@ public class SelectiveSyncStrategyTest {
         EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "Patient");
         eventRecords.add(er);
         when(patientService.getPatientByUuid(patientUuid)).thenReturn(patient);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(new ArrayList<AddressHierarchyLevel>());
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(any(AddressHierarchyLevel.class))).thenReturn(new ArrayList<AddressHierarchyEntry>());
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(patientService, times(2)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
@@ -452,6 +455,9 @@ public class SelectiveSyncStrategyTest {
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
         EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "patient");
         eventRecords.add(er);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(new ArrayList<AddressHierarchyLevel>());
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(any(AddressHierarchyLevel.class))).thenReturn(new ArrayList<AddressHierarchyEntry>());
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(patientService, times(2)).getPatientByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
@@ -470,6 +476,9 @@ public class SelectiveSyncStrategyTest {
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
         EventRecord er = new EventRecord("uuid", "Encounter", "", "url/" + encounterUuid, new Date(), "Encounter");
         eventRecords.add(er);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(new ArrayList<AddressHierarchyLevel>());
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(any(AddressHierarchyLevel.class))).thenReturn(new ArrayList<AddressHierarchyEntry>());
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());

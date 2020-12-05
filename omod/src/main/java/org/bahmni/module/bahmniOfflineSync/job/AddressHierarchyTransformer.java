@@ -27,7 +27,7 @@ public class AddressHierarchyTransformer implements RowTransformer {
         }
         try {
             AddressHierarchyEntry addressHierarchyEntry = addressHierarchyService.getAddressHierarchyEntryByUuid(uuid);
-            if(addressHierarchyEntry != null) {
+            if(addressHierarchyEntry != null && addressHierarchyEntry.getAddressHierarchyEntryId() != null) {
                 StringBuilder sbr = new StringBuilder();
                 sbr.append("{");
                 sbr.append(KeyMapping.AddressHierarchyEntry_ID + addressHierarchyEntry.getAddressHierarchyEntryId() + ",");
@@ -42,12 +42,12 @@ public class AddressHierarchyTransformer implements RowTransformer {
                 sbr.append(KeyMapping.AddressHierarchyLevel_UUID + addressHierarchyEntry.getLevel().getUuid() + "\",");
                 sbr.append(KeyMapping.AddressHierarchyLevel_ID + addressHierarchyEntry.getLevel().getId() + "},");
                 sbr.append(KeyMapping.Parent_ID + getParentID(addressHierarchyEntry.getParent()) + ",");
-                sbr.append(KeyMapping.UserGenerated_ID + addressHierarchyEntry.getUserGeneratedId() + ",");
+                sbr.append(KeyMapping.UserGenerated_ID + addressHierarchyEntry.getUserGeneratedId() + "\",");
                 sbr.append(KeyMapping.UUID + addressHierarchyEntry.getUuid()+"\"");
                 sbr.append("}");
                 SimpleObject simpleObject = new SimpleObject();
                 simpleObject.add("address",  SimpleObject.parseJson(sbr.toString()));
-                log.error("converted response ->" + simpleObject.get("address"));
+                //log.error("converted response ->" + simpleObject.get("address"));
                 return simpleObject.get("address");
             }
             else

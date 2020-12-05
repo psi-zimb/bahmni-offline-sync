@@ -3,6 +3,7 @@ package org.bahmni.module.bahmniOfflineSync.strategy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bahmni.module.bahmniOfflineSync.eventLog.EventLog;
+import org.bahmni.module.bahmniOfflineSync.utils.AddressHierarchyLevelWithLevelEntryName;
 import org.bahmni.module.bahmniOfflineSync.utils.SelectiveSyncStrategyHelper;
 import org.ict4h.atomfeed.server.domain.EventRecord;
 import org.openmrs.*;
@@ -17,7 +18,8 @@ import java.util.*;
 
 public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
     private static final String ATTRIBUTE_TYPE_NAME = "addressCode";
-    protected Log log = LogFactory.getLog(getClass());
+    protected static Log log = LogFactory.getLog(SelectiveSyncStrategy.class);
+    private static AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
 
     public SelectiveSyncStrategy() throws SQLException {
         super();
@@ -200,16 +202,18 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
     }
 
     private void setAdditionalFilters(EventLog eventLog, String uuid) {
-        if(eventLog.getCategory().equalsIgnoreCase("patient")){
+        if (eventLog.getCategory().equalsIgnoreCase("patient")) {
             AddressHierarchyLevel lowerLevel = getLowestLevel();
-            String lowestLevelUserGeneratedId = getUserGeneratedIDValue(lowerLevel,getLowerLevelName(lowerLevel,getPatient(uuid).getPerson().getPersonAddress()));
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid),eventLog, lowestLevelUserGeneratedId);
-        }
-        else if(eventLog.getCategory().equalsIgnoreCase("encounter")){
+            String lowestLevelUserGeneratedId = (null == lowerLevel ? null :
+                    getUserGeneratedIDValue(findLowestLevelAvailableInPersonAddress(lowerLevel, getAddressHierarchyLevelsList(), getPatient(uuid).getPerson().getPersonAddress())));
+            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid), eventLog, lowestLevelUserGeneratedId);
+
+        } else if (eventLog.getCategory().equalsIgnoreCase("encounter")) {
             Encounter encounter = encounterService.getEncounterByUuid(uuid);
             AddressHierarchyLevel lowerLevel = getLowestLevel();
-            String lowestLevelUserGeneratedId = getUserGeneratedIDValue(lowerLevel,getLowerLevelName(lowerLevel,getPatient(encounter.getPatient().getUuid()).getPerson().getPersonAddress()));
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()),eventLog, lowestLevelUserGeneratedId);
+            String lowestLevelUserGeneratedId = (null == lowerLevel ? null
+                    : getUserGeneratedIDValue(findLowestLevelAvailableInPersonAddress(lowerLevel, getAddressHierarchyLevelsList(), getPatient(encounter.getPatient().getUuid()).getPerson().getPersonAddress())));
+            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()), eventLog, lowestLevelUserGeneratedId);
         }
     }
 
@@ -224,41 +228,69 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
         return offlineConcept != null && offlineConcept.getSetMembers().contains(concept);
     }
 
-    private static String getLowerLevelName(AddressHierarchyLevel level, PersonAddress address){
-        switch(level.getAddressField()){
-            case ADDRESS_1 : return address.getAddress1();
-            case ADDRESS_2 : return address.getAddress2();
-            case ADDRESS_3 : return address.getAddress3();
-            case ADDRESS_4 : return address.getAddress4();
-            case ADDRESS_5 : return address.getAddress5();
-            case ADDRESS_6 : return address.getAddress6();
-            case STATE_PROVINCE : return address.getStateProvince();
-            case CITY_VILLAGE : return address.getCityVillage();
-            case COUNTRY : return address.getCountry();
-            case COUNTY_DISTRICT : return address.getCountyDistrict();
-            case POSTAL_CODE : return address.getPostalCode();
-            default : return null;
+    private static String getLowerLevelName(AddressHierarchyLevel level, PersonAddress address) {
+        switch (level.getAddressField()) {
+            case ADDRESS_1:
+                return address.getAddress1();
+            case ADDRESS_2:
+                return address.getAddress2();
+            case ADDRESS_3:
+                return address.getAddress3();
+            case ADDRESS_4:
+                return address.getAddress4();
+            case ADDRESS_5:
+                return address.getAddress5();
+            case ADDRESS_6:
+                return address.getAddress6();
+            case STATE_PROVINCE:
+                return address.getStateProvince();
+            case CITY_VILLAGE:
+                return address.getCityVillage();
+            case COUNTRY:
+                return address.getCountry();
+            case COUNTY_DISTRICT:
+                return address.getCountyDistrict();
+            case POSTAL_CODE:
+                return address.getPostalCode();
+            default:
+                return null;
         }
     }
 
-    private static String getUserGeneratedIDValue(AddressHierarchyLevel level, String levelValue){
+    private static String getUserGeneratedIDValue(AddressHierarchyLevelWithLevelEntryName level) {
         AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
-        AddressHierarchyEntry filteredEntry = addressHierarchyService.getAddressHierarchyEntriesByLevelAndLikeName(level, levelValue, 1).get(0);
-        return filteredEntry.getUserGeneratedId();
+        List<AddressHierarchyEntry> filteredEntries = addressHierarchyService.getAddressHierarchyEntriesByLevelAndLikeName(level.getLowerLevel(), level.getLowerLevelEntryName(), 1);
+        return filteredEntries.size() != 0 ? filteredEntries.get(0).getUserGeneratedId() : null;
     }
 
-    private static AddressHierarchyLevel getLowestLevel(){
-        AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
-        List<AddressHierarchyLevel> levels = addressHierarchyService.getAddressHierarchyLevels();
+    private static AddressHierarchyLevel getLowestLevel() {
+        List<AddressHierarchyLevel> levels = getAddressHierarchyLevelsList();
         List<AddressHierarchyLevel> levels1 = new ArrayList<>();
-        for(AddressHierarchyLevel level : levels) {
+        AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
+        for (AddressHierarchyLevel level : levels) {
             if (addressHierarchyService.getAddressHierarchyEntriesByLevel(level).size() != 0) {
                 levels1.add(level);
             }
         }
-        Collections.sort(levels1, Comparator.comparingInt(AddressHierarchyLevel ::getLevelId));
-        AddressHierarchyLevel lowerLevel = levels1.get(levels1.size() !=0 ? levels1.size()-1 : 0);
+        Collections.sort(levels1, Comparator.comparingInt(AddressHierarchyLevel::getLevelId));
+        AddressHierarchyLevel lowerLevel = levels1.size() != 0 ? levels1.get(levels1.size() - 1) : null;
         return lowerLevel;
+    }
+
+    private static List<AddressHierarchyLevel> getAddressHierarchyLevelsList() {
+        AddressHierarchyService addressHierarchyService = Context.getService(AddressHierarchyService.class);
+        return addressHierarchyService.getAddressHierarchyLevels();
+    }
+
+    private static AddressHierarchyLevelWithLevelEntryName findLowestLevelAvailableInPersonAddress(AddressHierarchyLevel level, List<AddressHierarchyLevel> levels, PersonAddress personAddress) {
+        String name = getLowerLevelName(level, personAddress);
+        if (null == getLowerLevelName(level, personAddress)) {
+            levels = levels.subList(0,levels.indexOf(level));
+            return findLowestLevelAvailableInPersonAddress(levels.get(levels.size() - 1), levels, personAddress);
+        } else {
+            return new AddressHierarchyLevelWithLevelEntryName(level, name);
+        }
+
     }
 
 }

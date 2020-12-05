@@ -1,6 +1,7 @@
 package org.bahmni.module.bahmniOfflineSync.strategy;
 
 import org.bahmni.module.bahmniOfflineSync.eventLog.EventLog;
+import org.bahmni.module.bahmniOfflineSync.utils.AddressHierarchyLevelWithLevelEntryName;
 import org.ict4h.atomfeed.server.domain.EventRecord;
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,6 +16,7 @@ import org.openmrs.api.EncounterService;
 import org.openmrs.api.LocationService;
 import org.openmrs.api.PatientService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.addresshierarchy.AddressField;
 import org.openmrs.module.addresshierarchy.AddressHierarchyEntry;
 import org.openmrs.module.addresshierarchy.AddressHierarchyLevel;
 import org.openmrs.module.addresshierarchy.service.AddressHierarchyService;
@@ -181,10 +183,13 @@ public class SelectiveSyncStrategyTest {
         List<EventRecord> eventRecords = new ArrayList<EventRecord>();
         EventRecord er  = new EventRecord("uuid","Encounter","","url/" + encounterUuid,new Date(),"Encounter");
         eventRecords.add(er);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(new ArrayList<AddressHierarchyLevel>());
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(any(AddressHierarchyLevel.class))).thenReturn(new ArrayList<AddressHierarchyEntry>());
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(encounterUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
     }
 
@@ -237,7 +242,7 @@ public class SelectiveSyncStrategyTest {
         verify(patientService, times(2)).getPatientByUuid(patientUuid);
         assertEquals(eventRecords.size(), eventLogs.size());
         assertEquals(er.getCategory(),eventLogs.get(0).getCategory());
-        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020", eventLogs.get(0).getFilter());
     }
 
     @Test
@@ -461,11 +466,8 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(patientService, times(2)).getPatientByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getFilter1());
-        assertEquals("District", eventLogs.get(0).getFilter2());
-        assertEquals("Facility", eventLogs.get(0).getFilter3());
     }
 
     @Test
@@ -482,11 +484,8 @@ public class SelectiveSyncStrategyTest {
         List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
         verify(encounterService, times(2)).getEncounterByUuid(anyString());
         assertEquals(eventRecords.size(), eventLogs.size());
-        assertEquals("202020-Test-District-Facility", eventLogs.get(0).getFilter());
+        assertEquals("202020", eventLogs.get(0).getFilter());
         assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
-        assertEquals("Test",eventLogs.get(0).getFilter1());
-        assertEquals("District", eventLogs.get(0).getFilter2());
-        assertEquals("Facility", eventLogs.get(0).getFilter3());
     }
 
     @Test
@@ -502,6 +501,136 @@ public class SelectiveSyncStrategyTest {
         assertEquals(null,eventLogs.get(0).getFilter1());
         assertEquals(null, eventLogs.get(0).getFilter2());
         assertEquals(null, eventLogs.get(0).getFilter3());
+    }
+
+    @Test
+    public void shouldGetUserGeneratedIDinFilterForPatient() throws Exception {
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "Patient");
+        eventRecords.add(er);
+        when(patientService.getPatientByUuid(patientUuid)).thenReturn(patient);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+
+        AddressHierarchyLevel level1 = new AddressHierarchyLevel();
+        level1.setAddressField(AddressField.STATE_PROVINCE);
+        level1.setId(1);
+        level1.setName("Province");
+        level1.setLevelId(3);
+        level1.setParent(null);
+
+        AddressHierarchyLevel level2 = new AddressHierarchyLevel();
+        level2.setAddressField(AddressField.CITY_VILLAGE);
+        level2.setId(2);
+        level2.setName("District");
+        level2.setLevelId(4);
+        level2.setParent(level1);
+
+        AddressHierarchyLevel level3 = new AddressHierarchyLevel();
+        level3.setAddressField(AddressField.ADDRESS_2);
+        level3.setId(3);
+        level3.setName("Facility");
+        level3.setLevelId(5);
+        level3.setParent(level2);
+
+        AddressHierarchyLevel level4 = new AddressHierarchyLevel();
+        level4.setAddressField(AddressField.ADDRESS_1);
+        level4.setId(4);
+        level4.setName("Address (free text)");
+        level4.setLevelId(6);
+        level4.setParent(level3);
+
+        List<AddressHierarchyLevel> levels = new ArrayList<>();
+        levels.add(level1);
+        levels.add(level2);
+        levels.add(level3);
+        levels.add(level4);
+
+        AddressHierarchyEntry entry1 = new AddressHierarchyEntry();
+        entry1.setAddressHierarchyEntryId(1);
+        entry1.setAddressHierarchyLevel(level3);
+        entry1.setName("GUDO CLINIC[25]");
+        entry1.setUserGeneratedId("07-08-09");
+
+        List<AddressHierarchyEntry> entries = new ArrayList<>();
+        entries.add(entry1);
+
+        AddressHierarchyLevelWithLevelEntryName customObject = new AddressHierarchyLevelWithLevelEntryName(level3, "GUDO CLINIC[25]");
+
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(levels);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level1)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level2)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level3)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevelAndLikeName(anyObject(), anyString(), anyInt())).thenReturn(entries);
+        List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        verify(patientService, times(3)).getPatientByUuid(patientUuid);
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals("202020-07-08-09", eventLogs.get(0).getFilter());
+    }
+
+    @Test
+    public void shouldNotGetUserGeneratedIDinFilterForPatientIfNoMatchIsFound() throws Exception {
+        List<EventRecord> eventRecords = new ArrayList<EventRecord>();
+        EventRecord er = new EventRecord("uuid", "Patient", "", "url/" + patientUuid, new Date(), "Patient");
+        eventRecords.add(er);
+        when(patientService.getPatientByUuid(patientUuid)).thenReturn(patient);
+        Mockito.when(Context.getService(AddressHierarchyService.class)).thenReturn(addressHierarchyService);
+
+        AddressHierarchyLevel level1 = new AddressHierarchyLevel();
+        level1.setAddressField(AddressField.STATE_PROVINCE);
+        level1.setId(1);
+        level1.setName("Province");
+        level1.setLevelId(3);
+        level1.setParent(null);
+
+        AddressHierarchyLevel level2 = new AddressHierarchyLevel();
+        level2.setAddressField(AddressField.CITY_VILLAGE);
+        level2.setId(2);
+        level2.setName("District");
+        level2.setLevelId(4);
+        level2.setParent(level1);
+
+        AddressHierarchyLevel level3 = new AddressHierarchyLevel();
+        level3.setAddressField(AddressField.ADDRESS_2);
+        level3.setId(3);
+        level3.setName("Facility");
+        level3.setLevelId(5);
+        level3.setParent(level2);
+
+        AddressHierarchyLevel level4 = new AddressHierarchyLevel();
+        level4.setAddressField(AddressField.ADDRESS_1);
+        level4.setId(4);
+        level4.setName("Address (free text)");
+        level4.setLevelId(6);
+        level4.setParent(level3);
+
+        List<AddressHierarchyLevel> levels = new ArrayList<>();
+        levels.add(level1);
+        levels.add(level2);
+        levels.add(level3);
+        levels.add(level4);
+
+        AddressHierarchyEntry entry1 = new AddressHierarchyEntry();
+        entry1.setAddressHierarchyEntryId(1);
+        entry1.setAddressHierarchyLevel(level3);
+        entry1.setName("GUDO CLINIC[25]");
+        entry1.setUserGeneratedId("07-08-09");
+
+        List<AddressHierarchyEntry> entries = new ArrayList<>();
+        entries.add(entry1);
+
+        AddressHierarchyLevelWithLevelEntryName customObject = new AddressHierarchyLevelWithLevelEntryName(level3, "GUDO CLINIC[25]");
+
+        when(addressHierarchyService.getAddressHierarchyLevels()).thenReturn(levels);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level1)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level2)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevel(level3)).thenReturn(entries);
+        when(addressHierarchyService.getAddressHierarchyEntriesByLevelAndLikeName(anyObject(), anyString(), anyInt())).thenReturn(anyList());
+        List<EventLog> eventLogs = selectiveSyncStrategy.getEventLogsFromEventRecords(eventRecords);
+        verify(patientService, times(3)).getPatientByUuid(patientUuid);
+        assertEquals(eventRecords.size(), eventLogs.size());
+        assertEquals(er.getCategory(), eventLogs.get(0).getCategory());
+        assertEquals("202020", eventLogs.get(0).getFilter());
     }
 
 }

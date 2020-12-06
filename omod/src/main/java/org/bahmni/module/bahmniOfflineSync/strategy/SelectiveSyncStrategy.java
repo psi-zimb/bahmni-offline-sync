@@ -184,16 +184,22 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
                     }
                 }
 
-                if (category.equalsIgnoreCase("Patient")|| category.equalsIgnoreCase("LabOrderResults"))
-                    filter = evaluateFilterForPatient(uuid);
-                else if (category.equalsIgnoreCase("Encounter") || category.equalsIgnoreCase("SHREncounter"))
-                    filter = evaluateFilterForEncounter(uuid);
-                else if (category.equalsIgnoreCase("addressHierarchy"))
-                    filter = evaluateFilterForAddressHierarchy(uuid);
-
-                eventLog.setFilter(filter);
-                if(null != filter)
+                if (category.equalsIgnoreCase("Patient")|| category.equalsIgnoreCase("LabOrderResults")) {
+                   // filter = evaluateFilterForPatient(uuid);
                     setAdditionalFilters(eventLog,uuid);
+                }
+                else if (category.equalsIgnoreCase("Encounter") || category.equalsIgnoreCase("SHREncounter")) {
+                  //  filter = evaluateFilterForEncounter(uuid);
+                    setAdditionalFilters(eventLog,uuid);
+                }
+                else if (category.equalsIgnoreCase("addressHierarchy")) {
+                    filter = evaluateFilterForAddressHierarchy(uuid);
+                    eventLog.setFilter(filter);
+                }
+
+//                eventLog.setFilter(filter);
+//                if(null != filter)
+//                    setAdditionalFilters(eventLog,uuid);
             }
             eventLogs.add(eventLog);
         }
@@ -206,14 +212,16 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
             AddressHierarchyLevel lowerLevel = getLowestLevel();
             String lowestLevelUserGeneratedId = (null == lowerLevel ? null :
                     getUserGeneratedIDValue(findLowestLevelAvailableInPersonAddress(lowerLevel, getAddressHierarchyLevelsList(), getPatient(uuid).getPerson().getPersonAddress())));
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid), eventLog, lowestLevelUserGeneratedId);
+            //SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(uuid), eventLog, lowestLevelUserGeneratedId);
+            eventLog.setFilter(lowestLevelUserGeneratedId);
 
         } else if (eventLog.getCategory().equalsIgnoreCase("encounter")) {
             Encounter encounter = encounterService.getEncounterByUuid(uuid);
             AddressHierarchyLevel lowerLevel = getLowestLevel();
             String lowestLevelUserGeneratedId = (null == lowerLevel ? null
                     : getUserGeneratedIDValue(findLowestLevelAvailableInPersonAddress(lowerLevel, getAddressHierarchyLevelsList(), getPatient(encounter.getPatient().getUuid()).getPerson().getPersonAddress())));
-            SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()), eventLog, lowestLevelUserGeneratedId);
+            //SelectiveSyncStrategyHelper.setAddressHierarchy(getPatient(encounter.getPatient().getUuid()), eventLog, lowestLevelUserGeneratedId);
+            eventLog.setFilter(lowestLevelUserGeneratedId);
         }
     }
 

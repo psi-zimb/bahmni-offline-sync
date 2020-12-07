@@ -170,7 +170,7 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
         List<EventLog> eventLogs = new ArrayList<EventLog>();
 
         for (EventRecord er : eventRecords) {
-            EventLog eventLog = new EventLog(er.getUuid(),er.getCategory(),er.getTimeStamp(),er.getContents(), er.getUuid(), er.getUuid());
+            EventLog eventLog = new EventLog(er.getUuid(),er.getCategory(),er.getTimeStamp(),er.getContents(), null, er.getUuid());
             String category = er.getCategory();
             String uuid = getUuidFromURL(er.getContents());
             String filter = null;

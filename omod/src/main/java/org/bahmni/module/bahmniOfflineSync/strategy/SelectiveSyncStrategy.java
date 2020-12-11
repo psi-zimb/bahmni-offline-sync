@@ -67,7 +67,7 @@ public class SelectiveSyncStrategy extends AbstractOfflineSyncStrategy {
         categoryFilterMap.put("patient", transactionalDataFilters);
         categoryFilterMap.put("encounter", transactionalDataFilters);
         categoryFilterMap.put("addressHierarchy", getFiltersForAddressHierarchy(addressHierarchyEntry));
-        categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
+        //categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
         categoryFilterMap.put("offline-concepts", new ArrayList<String>());
         categoryFilterMap.put("forms", new ArrayList<>());
         return categoryFilterMap;

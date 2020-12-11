@@ -295,7 +295,7 @@ public class SelectiveSyncStrategyTest {
         categoryFilterMap.put("patient", transactionalDataFilters);
         categoryFilterMap.put("encounter", transactionalDataFilters);
         categoryFilterMap.put("addressHierarchy", addressHierarchyFilters);
-        categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
+       // categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
         categoryFilterMap.put("offline-concepts", new ArrayList<String>());
         categoryFilterMap.put("forms", new ArrayList<String>());
         assertEquals(categoryFilterMap, markers);
@@ -345,7 +345,7 @@ public class SelectiveSyncStrategyTest {
         categoryFilterMap.put("patient", transactionalDataFilters);
         categoryFilterMap.put("encounter", transactionalDataFilters);
         categoryFilterMap.put("addressHierarchy", addressHierarchyFilters);
-        categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
+        //categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
         categoryFilterMap.put("offline-concepts", new ArrayList<String>());
         categoryFilterMap.put("forms", new ArrayList<String>());
         assertEquals(categoryFilterMap, markers);
@@ -399,7 +399,7 @@ public class SelectiveSyncStrategyTest {
         categoryFilterMap.put("patient", transactionalDataFilters);
         categoryFilterMap.put("encounter", transactionalDataFilters);
         categoryFilterMap.put("addressHierarchy", addressHierarchyFilters);
-        categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
+        //categoryFilterMap.put("parentAddressHierarchy", new ArrayList<String>());
         categoryFilterMap.put("offline-concepts", new ArrayList<String>());
         categoryFilterMap.put("forms", new ArrayList<String>());
         assertEquals(categoryFilterMap, markers);
